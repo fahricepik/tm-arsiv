@@ -12,8 +12,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# JSON dosyasını oku
 file_path = os.path.join(os.path.dirname(__file__), "db_cleaned.json")
-
 with open(file_path, "r", encoding="utf-8") as f:
     raw_data = json.load(f)
     if isinstance(raw_data, dict) and "sarkilar" in raw_data and isinstance(raw_data["sarkilar"], dict):
@@ -21,6 +21,7 @@ with open(file_path, "r", encoding="utf-8") as f:
     else:
         data = raw_data
 
+# API uç noktası
 @app.get("/sarkilar")
 def get_sarkilar():
     return data
