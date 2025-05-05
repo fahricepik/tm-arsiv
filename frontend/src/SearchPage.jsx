@@ -6,8 +6,7 @@ import * as XLSX from "xlsx";
 export default function SearchPage() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [basicFilters, setBasicFilters] = useState({ adi: "", soz: "", kaynak_kisi: "" });
-  const [advancedFilters, setAdvancedFilters] = useState({ yore: "", usul: "", tur: "", makam: "", ton: "" });
+  const [filters, setFilters] = useState({ adi: "", soz: "", yore: "", kaynak_kisi: "", usul: "" });
   const [options, setOptions] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 50;
@@ -20,7 +19,7 @@ export default function SearchPage() {
         setData(records);
         setFilteredData(records);
 
-        const keys = ["yore", "usul", "tur", "makam", "ton"];
+        const keys = ["yore", "usul", "kaynak_kisi"];
         const generated = {};
         keys.forEach(key => {
           generated[key] = [...new Set(records.map(item => item[key]).filter(Boolean))].sort((a, b) =>
@@ -35,35 +34,33 @@ export default function SearchPage() {
     let result = [...data];
 
     result = result.filter(item =>
-      Object.entries(basicFilters).every(([key, val]) => {
+      Object.entries(filters).every(([key, val]) => {
         if (!val) return true;
+        const content = (item[key] || "").toLowerCase();
         if (key === "soz") {
-          const kelimeler = val.toLowerCase().split(" ");
-          return kelimeler.every(kelime => (item.soz || "").toLowerCase().includes(kelime));
+          return val.toLowerCase().split(" ").every(k => content.includes(k));
         }
-        return (item[key] || "").toLowerCase().includes(val.toLowerCase());
-      }) &&
-      Object.entries(advancedFilters).every(([key, val]) => (val ? item[key] === val : true))
+        return content.includes(val.toLowerCase());
+      })
     );
 
     setFilteredData(result);
     setCurrentPage(1);
-  }, [basicFilters, advancedFilters, data]);
+  }, [filters, data]);
 
-  const handleBasicFilterChange = (field, value) => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setBasicFilters(prev => ({ ...prev, [field]: value }));
-    }, 300);
-  };
-
-  const handleAdvancedFilterChange = (field, value) => {
-    setAdvancedFilters(prev => ({ ...prev, [field]: value }));
+  const handleFilterChange = (field, value) => {
+    if (["adi", "soz"].includes(field)) {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => {
+        setFilters(prev => ({ ...prev, [field]: value }));
+      }, 300);
+    } else {
+      setFilters(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const clearAllFilters = () => {
-    setBasicFilters({ adi: "", soz: "", kaynak_kisi: "" });
-    setAdvancedFilters({ yore: "", usul: "", tur: "", makam: "", ton: "" });
+    setFilters({ adi: "", soz: "", yore: "", kaynak_kisi: "", usul: "" });
   };
 
   const currentPageData = filteredData.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage);
@@ -88,25 +85,21 @@ export default function SearchPage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">🎵 THM Arama Sistemi</h1>
+      <h1 className="text-2xl font-bold mb-4">🎵 THM Sözlü Arşiv Arama Sistemi</h1>
 
       <div className="flex flex-wrap gap-2 mb-2">
-        {["adi", "soz", "kaynak_kisi"].map(field => (
-          <input
-            key={field}
-            placeholder={field}
-            className="border p-2 rounded"
-            value={basicFilters[field]}
-            onChange={e => handleBasicFilterChange(field, e.target.value)}
-          />
-        ))}
-
-        {["yore", "usul", "tur", "makam", "ton"].map(field => (
+        <input
+          placeholder="adi"
+          className="border p-2 rounded"
+          value={filters.adi}
+          onChange={e => handleFilterChange("adi", e.target.value)}
+        />
+        {["yore", "kaynak_kisi", "usul"].map(field => (
           <select
             key={field}
             className="border p-2 rounded"
-            value={advancedFilters[field]}
-            onChange={e => handleAdvancedFilterChange(field, e.target.value)}
+            value={filters[field]}
+            onChange={e => handleFilterChange(field, e.target.value)}
           >
             <option value="">{field.toUpperCase()}</option>
             {(options[field] || []).map((opt, idx) => (
@@ -114,20 +107,12 @@ export default function SearchPage() {
             ))}
           </select>
         ))}
-      </div>
-
-      <div className="mb-2">
-        {[...Object.entries(basicFilters), ...Object.entries(advancedFilters)]
-          .filter(([_, val]) => val)
-          .map(([key, val], i) => (
-            <span key={i} className="border p-1 mr-1 text-sm rounded">
-              {key}: {val}
-              <button onClick={() => {
-                if (basicFilters[key] !== undefined) setBasicFilters(prev => ({ ...prev, [key]: "" }));
-                if (advancedFilters[key] !== undefined) setAdvancedFilters(prev => ({ ...prev, [key]: "" }));
-              }}> ×</button>
-            </span>
-        ))}
+        <input
+          placeholder="soz"
+          className="border p-2 rounded"
+          value={filters.soz}
+          onChange={e => handleFilterChange("soz", e.target.value)}
+        />
       </div>
 
       <div className="flex gap-2 mb-2">
