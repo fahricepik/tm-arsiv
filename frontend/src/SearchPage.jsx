@@ -13,24 +13,29 @@ export default function SearchPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [modalImg, setModalImg] = useState(null);
 
-  useEffect(() => {
+    useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/sarkilar`)
       .then(res => res.json())
       .then(records => {
+        console.log("Veri geldi:", records);
         setData(records);
         const keys = ["arsiv_no", "makam", "ton", "sabit_donanim", "gecici_donanim", "ses_genisligi", "derleyen", "notaya_alan", "tur", "yore", "usul", "kaynak_kisi"];
         const generated = {};
         keys.forEach(key => {
           generated[key] = [...new Set(records.map(item => item[key]).filter(Boolean))].sort((a, b) => {
-  const numA = parseFloat(a);
-  const numB = parseFloat(b);
-  if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-  return String(a).localeCompare(String(b), 'tr');
-});
+            const numA = parseFloat(a);
+            const numB = parseFloat(b);
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            return String(a).localeCompare(String(b), 'tr');
+          });
         });
         setOptions(generated);
+      })
+      .catch(error => {
+        console.error("Veri çekme hatası:", error);
       });
   }, []);
+
 
   const debounceTimer = useRef(null);
   const handleBasicFilterChange = (field, value) => {
