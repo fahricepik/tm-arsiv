@@ -14,7 +14,7 @@ export default function SearchPage() {
   const [modalImg, setModalImg] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:3001/sarkilar")
+    fetch(`${import.meta.env.VITE_API_URL}/sarkilar`)
       .then(res => res.json())
       .then(records => {
         setData(records);
