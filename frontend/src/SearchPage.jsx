@@ -7,8 +7,8 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 50;
   const [data, setData] = useState([]);
-  const [basicFilters, setBasicFilters] = useState({ adi: "", yore: "", usul: "", kaynak_kisi: "", soz: "" });
-  const [filters, setFilters] = useState({});
+  const [basicFilters, setBasicFilters] = useState({ adi: "", kaynak_kisi: "", soz: "" });
+  const [filters, setFilters] = useState({ yore: "", usul: "", tur: "" });
   const [options, setOptions] = useState({});
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [modalImg, setModalImg] = useState(null);
@@ -45,10 +45,13 @@ export default function SearchPage() {
     }, 300);
   };
 
-  const handleFilterChange = (field, value) => setFilters(prev => ({ ...prev, [field]: value }));
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleReset = () => {
-    setBasicFilters({ adi: "", yore: "", usul: "", kaynak_kisi: "", soz: "" });
-    setFilters({});
+    setBasicFilters({ adi: "", kaynak_kisi: "", soz: "" });
+    setFilters({ yore: "", usul: "", tur: "" });
     setCurrentPage(1);
   };
 
@@ -56,14 +59,14 @@ export default function SearchPage() {
     ? data.filter(item =>
         Object.entries(basicFilters).every(([key, val]) =>
           val ? (item[key] || "").toLowerCase().includes(val.toLowerCase()) : true
+        ) &&
+        Object.entries(filters).every(([key, val]) =>
+          val ? item[key] === val : true
         )
       )
     : [];
 
-  const currentPageData = filtered.slice(
-    (currentPage - 1) * resultsPerPage,
-    currentPage * resultsPerPage
-  );
+  const currentPageData = filtered.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage);
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
@@ -86,24 +89,40 @@ export default function SearchPage() {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">🎵 THM Sözlü Arşiv Arama Sistemi</h1>
-      <div className="flex gap-2 mb-2">
-        {["adi", "yore", "usul", "kaynak_kisi", "soz"].map(field => (
+      
+      <div className="flex flex-wrap gap-2 mb-2">
+        {["adi", "kaynak_kisi", "soz"].map(field => (
           <input
             key={field}
             type="text"
-            placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+            placeholder={field}
             value={basicFilters[field]}
             onChange={e => handleBasicFilterChange(field, e.target.value)}
             className="border p-2 rounded"
           />
         ))}
+
+        {["yore", "usul", "tur"].map(field => (
+          <select
+            key={field}
+            value={filters[field]}
+            onChange={e => handleFilterChange(field, e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option value="">{field.toUpperCase()}</option>
+            {(options[field] || []).map((opt, idx) => (
+              <option key={idx} value={opt}>{opt}</option>
+            ))}
+          </select>
+        ))}
       </div>
+
       <div className="flex gap-2 mb-2">
-        <button onClick={() => setShowAdvanced(!showAdvanced)}>Detaylı Aramayı Göster</button>
-        <button onClick={handleReset}>Tümünü Sıfırla</button>
+        <button onClick={handleReset}>Sıfırla</button>
         <button onClick={handleExportPDF}>PDF Aktar</button>
         <button onClick={handleExportXLS}>XLS Aktar</button>
       </div>
+
       <div className="overflow-x-auto">
         <table className="min-w-full border">
           <thead>
@@ -112,7 +131,7 @@ export default function SearchPage() {
               <th>Adı</th>
               <th>Yöre</th>
               <th>Usul</th>
-              <th>Nota Görseli</th>
+              <th>Nota</th>
               <th>MP3</th>
             </tr>
           </thead>
@@ -130,6 +149,7 @@ export default function SearchPage() {
           </tbody>
         </table>
       </div>
+
       <p className="mt-2">Toplam {filtered.length} sonuç bulundu</p>
       <div className="mt-2 flex gap-2">
         <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>← Geri</button>
