@@ -13,29 +13,24 @@ export default function SearchPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [modalImg, setModalImg] = useState(null);
 
-    useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/sarkilar`)
+  useEffect(() => {
+    fetch("http://localhost:3001/sarkilar")
       .then(res => res.json())
       .then(records => {
-        console.log("Veri geldi:", records);
         setData(records);
         const keys = ["arsiv_no", "makam", "ton", "sabit_donanim", "gecici_donanim", "ses_genisligi", "derleyen", "notaya_alan", "tur", "yore", "usul", "kaynak_kisi"];
         const generated = {};
         keys.forEach(key => {
-          generated[key] = [...new Set(records.map(item => item[key]).filter(Boolean))].sort((a, b) => {
-            const numA = parseFloat(a);
-            const numB = parseFloat(b);
-            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-            return String(a).localeCompare(String(b), 'tr');
-          });
+          generated[key] = [...new Set(Array.isArray(records) && records.map(item => item[key]).filter(Boolean))].sort((a, b) => {
+  const numA = parseFloat(a);
+  const numB = parseFloat(b);
+  if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+  return String(a).localeCompare(String(b), 'tr');
+});
         });
         setOptions(generated);
-      })
-      .catch(error => {
-        console.error("Veri çekme hatası:", error);
       });
   }, []);
-
 
   const debounceTimer = useRef(null);
   const handleBasicFilterChange = (field, value) => {
@@ -56,7 +51,7 @@ export default function SearchPage() {
     autoTable(doc, {
       startY: 20,
       head: [["Adı", "Yöre", "Usul"]],
-      body: filtered.map(i => [i.adi, i.yore, i.usul])
+      body: Array.isArray(filtered) && filtered.map(i => [i.adi, i.yore, i.usul])
     });
     doc.save("thm-arsiv.pdf");
   };
@@ -64,7 +59,7 @@ export default function SearchPage() {
   const handleExportXLS = () => {
     const today = new Date().toISOString().slice(0, 10);
     const headers = ["arsiv_no", "adi", "yore", "usul", "kaynak_kisi", "tur", "makam", "ton", "sabit_donanim", "gecici_donanim", "ses_genisligi"];
-    const rows = filtered.map(row =>
+    const rows = Array.isArray(filtered) && filtered.map(row =>
       headers.reduce((acc, h) => {
         acc[h] = row[h] ?? "";
         return acc;
@@ -76,7 +71,7 @@ export default function SearchPage() {
     XLSX.writeFile(workbook, `thm_sonuclar_${today}.xlsx`);
   };
 
-  const filtered = data.filter(item => {
+  const filtered = Array.isArray(data) && data.filter(item => {
     const basicMatch = Object.entries(basicFilters).every(([key, val]) => item[key]?.toLowerCase()?.includes(val.toLowerCase()));
     const detailedMatch = Object.entries(filters).every(([key, val]) => !val || item[key]?.toLowerCase?.() === val.toLowerCase());
     return basicMatch && detailedMatch;
@@ -195,7 +190,7 @@ export default function SearchPage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedResults.map((item, index) => (
+              {Array.isArray(paginatedResults) && paginatedResults.map((item, index) => (
                 <tr key={item.id || index} className="odd:bg-white even:bg-gray-50">
                   <td className="border px-2 py-1">{(currentPage - 1) * resultsPerPage + index + 1}</td>
                   <td className="border px-2 py-1">{item.adi}</td>
@@ -250,8 +245,8 @@ export default function SearchPage() {
         range.push("...");
       }
     }
-    const cleaned = range.filter((item, index) => item !== "..." || range[index - 1] !== "...");
-    return cleaned.map((num, idx) => (
+    const cleaned = Array.isArray(range) && range.filter((item, index) => item !== "..." || range[index - 1] !== "...");
+    return Array.isArray(cleaned) && cleaned.map((num, idx) => (
       <button
         key={idx}
         onClick={() => typeof num === 'number' && setCurrentPage(num)}
