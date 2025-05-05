@@ -4,39 +4,51 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
 export default function SearchPage() {
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [basicFilters, setBasicFilters] = useState({ adi: "", soz: "", kaynak_kisi: "" });
+  const [advancedFilters, setAdvancedFilters] = useState({ yore: "", usul: "", tur: "", makam: "", ton: "" });
+  const [options, setOptions] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 50;
-  const [data, setData] = useState([]);
-  const [basicFilters, setBasicFilters] = useState({ adi: "", kaynak_kisi: "", soz: "" });
-  const [filters, setFilters] = useState({ yore: "", usul: "", tur: "" });
-  const [options, setOptions] = useState({});
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [modalImg, setModalImg] = useState(null);
   const debounceTimer = useRef(null);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/sarkilar`)
       .then(res => res.json())
       .then(records => {
-        if (!Array.isArray(records)) {
-          console.error("Beklenmeyen veri yapısı:", records);
-          return;
-        }
         setData(records);
-        const keys = ["arsiv_no", "makam", "ton", "sabit_donanim", "gecici_donanim", "ses_genisligi", "derleyen", "notaya_alan", "tur", "yore", "usul", "kaynak_kisi"];
+        setFilteredData(records);
+
+        const keys = ["yore", "usul", "tur", "makam", "ton"];
         const generated = {};
         keys.forEach(key => {
-          generated[key] = [...new Set(records.map(item => item[key]).filter(Boolean))].sort((a, b) => {
-            const numA = parseFloat(a);
-            const numB = parseFloat(b);
-            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-            return String(a).localeCompare(String(b), 'tr');
-          });
+          generated[key] = [...new Set(records.map(item => item[key]).filter(Boolean))].sort((a, b) =>
+            a.localeCompare(b, "tr")
+          );
         });
         setOptions(generated);
-      })
-      .catch(error => console.error("Veri çekme hatası:", error));
+      });
   }, []);
+
+  useEffect(() => {
+    let result = [...data];
+
+    result = result.filter(item =>
+      Object.entries(basicFilters).every(([key, val]) => {
+        if (!val) return true;
+        if (key === "soz") {
+          const kelimeler = val.toLowerCase().split(" ");
+          return kelimeler.every(kelime => (item.soz || "").toLowerCase().includes(kelime));
+        }
+        return (item[key] || "").toLowerCase().includes(val.toLowerCase());
+      }) &&
+      Object.entries(advancedFilters).every(([key, val]) => (val ? item[key] === val : true))
+    );
+
+    setFilteredData(result);
+    setCurrentPage(1);
+  }, [basicFilters, advancedFilters, data]);
 
   const handleBasicFilterChange = (field, value) => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -45,28 +57,16 @@ export default function SearchPage() {
     }, 300);
   };
 
-  const handleFilterChange = (field, value) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+  const handleAdvancedFilterChange = (field, value) => {
+    setAdvancedFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleReset = () => {
-    setBasicFilters({ adi: "", kaynak_kisi: "", soz: "" });
-    setFilters({ yore: "", usul: "", tur: "" });
-    setCurrentPage(1);
+  const clearAllFilters = () => {
+    setBasicFilters({ adi: "", soz: "", kaynak_kisi: "" });
+    setAdvancedFilters({ yore: "", usul: "", tur: "", makam: "", ton: "" });
   };
 
-  const filtered = Array.isArray(data)
-    ? data.filter(item =>
-        Object.entries(basicFilters).every(([key, val]) =>
-          val ? (item[key] || "").toLowerCase().includes(val.toLowerCase()) : true
-        ) &&
-        Object.entries(filters).every(([key, val]) =>
-          val ? item[key] === val : true
-        )
-      )
-    : [];
-
-  const currentPageData = filtered.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage);
+  const currentPageData = filteredData.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage);
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
@@ -88,26 +88,25 @@ export default function SearchPage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">🎵 THM Sözlü Arşiv Arama Sistemi</h1>
-      
+      <h1 className="text-2xl font-bold mb-4">🎵 THM Arama Sistemi</h1>
+
       <div className="flex flex-wrap gap-2 mb-2">
-        {["adi", "kaynak_kisi", "soz"].map(field => (
+        {["adi", "soz", "kaynak_kisi"].map(field => (
           <input
             key={field}
-            type="text"
             placeholder={field}
+            className="border p-2 rounded"
             value={basicFilters[field]}
             onChange={e => handleBasicFilterChange(field, e.target.value)}
-            className="border p-2 rounded"
           />
         ))}
 
-        {["yore", "usul", "tur"].map(field => (
+        {["yore", "usul", "tur", "makam", "ton"].map(field => (
           <select
             key={field}
-            value={filters[field]}
-            onChange={e => handleFilterChange(field, e.target.value)}
             className="border p-2 rounded"
+            value={advancedFilters[field]}
+            onChange={e => handleAdvancedFilterChange(field, e.target.value)}
           >
             <option value="">{field.toUpperCase()}</option>
             {(options[field] || []).map((opt, idx) => (
@@ -117,8 +116,22 @@ export default function SearchPage() {
         ))}
       </div>
 
+      <div className="mb-2">
+        {[...Object.entries(basicFilters), ...Object.entries(advancedFilters)]
+          .filter(([_, val]) => val)
+          .map(([key, val], i) => (
+            <span key={i} className="border p-1 mr-1 text-sm rounded">
+              {key}: {val}
+              <button onClick={() => {
+                if (basicFilters[key] !== undefined) setBasicFilters(prev => ({ ...prev, [key]: "" }));
+                if (advancedFilters[key] !== undefined) setAdvancedFilters(prev => ({ ...prev, [key]: "" }));
+              }}> ×</button>
+            </span>
+        ))}
+      </div>
+
       <div className="flex gap-2 mb-2">
-        <button onClick={handleReset}>Sıfırla</button>
+        <button onClick={clearAllFilters}>Sıfırla</button>
         <button onClick={handleExportPDF}>PDF Aktar</button>
         <button onClick={handleExportXLS}>XLS Aktar</button>
       </div>
@@ -150,11 +163,11 @@ export default function SearchPage() {
         </table>
       </div>
 
-      <p className="mt-2">Toplam {filtered.length} sonuç bulundu</p>
+      <p className="mt-2">Toplam {filteredData.length} sonuç bulundu</p>
       <div className="mt-2 flex gap-2">
-        <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>← Geri</button>
-        <span>Sayfa {currentPage} / {Math.ceil(filtered.length / resultsPerPage)}</span>
-        <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage * resultsPerPage >= filtered.length}>İleri →</button>
+        <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>←</button>
+        <span>Sayfa {currentPage}</span>
+        <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage * resultsPerPage >= filteredData.length}>→</button>
       </div>
     </div>
   );
