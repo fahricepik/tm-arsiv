@@ -9,13 +9,29 @@ const SearchPage = () => {
   const [kaynakKisiFilter, setKaynakKisiFilter] = useState("");
   const [usulFilter, setUsulFilter] = useState("");
   const [sozFilter, setSozFilter] = useState("");
+  const [dropdownOptions, setDropdownOptions] = useState({ yore: [], kaynak_kisi: [], usul: [] });
 
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/sarkilar`)
       .then((res) => {
-        setData(res.data.sarkilar);
-        setFilteredData(res.data.sarkilar);
+        const songs = res.data.sarkilar;
+        setData(songs);
+        setFilteredData(songs);
+
+        const extractSorted = (field) => {
+          const values = Array.from(new Set(songs.map(item => item[field]).filter(Boolean)));
+          const isNumeric = values.every(v => !isNaN(parseFloat(v)));
+          return isNumeric
+            ? values.sort((a, b) => parseFloat(a) - parseFloat(b))
+            : values.sort((a, b) => a.localeCompare(b, "tr"));
+        };
+
+        setDropdownOptions({
+          yore: extractSorted("yore"),
+          kaynak_kisi: extractSorted("kaynak_kisi"),
+          usul: extractSorted("usul")
+        });
       })
       .catch((err) => console.error("Veri çekme hatası:", err));
   }, []);
@@ -44,27 +60,36 @@ const SearchPage = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border p-2 rounded"
         />
-        <input
-          type="text"
-          placeholder="YORE"
+        <select
           value={yoreFilter}
           onChange={(e) => setYoreFilter(e.target.value)}
           className="border p-2 rounded"
-        />
-        <input
-          type="text"
-          placeholder="KAYNAK_KISI"
+        >
+          <option value="">YORE</option>
+          {dropdownOptions.yore.map((option, i) => (
+            <option key={i} value={option}>{option}</option>
+          ))}
+        </select>
+        <select
           value={kaynakKisiFilter}
           onChange={(e) => setKaynakKisiFilter(e.target.value)}
           className="border p-2 rounded"
-        />
-        <input
-          type="text"
-          placeholder="USUL"
+        >
+          <option value="">KAYNAK_KISI</option>
+          {dropdownOptions.kaynak_kisi.map((option, i) => (
+            <option key={i} value={option}>{option}</option>
+          ))}
+        </select>
+        <select
           value={usulFilter}
           onChange={(e) => setUsulFilter(e.target.value)}
           className="border p-2 rounded"
-        />
+        >
+          <option value="">USUL</option>
+          {dropdownOptions.usul.map((option, i) => (
+            <option key={i} value={option}>{option}</option>
+          ))}
+        </select>
         <input
           type="text"
           placeholder="soz"
