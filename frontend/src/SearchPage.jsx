@@ -75,7 +75,7 @@ const SearchPage = () => {
       </div>
 
       <table className="table-auto w-full border-collapse border border-gray-400">
-        <thead className="sticky top-0 bg-purple-100 text-purple-800">
+        <thead className="sticky top-0 bg-purple-200 text-purple-900 z-10">
           <tr>
             <th className="border p-2">#</th>
             <th className="border p-2">Adı</th>
@@ -108,7 +108,12 @@ const SearchPage = () => {
               </td>
               <td className="border p-2">
                 {item.mp3 !== "=" ? (
-                  <a href={`/${item.mp3}`} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={`/${item.mp3}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
                     Dinle
                   </a>
                 ) : (
