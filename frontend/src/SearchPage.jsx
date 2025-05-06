@@ -110,7 +110,7 @@ export default function SearchPage() {
       <div className="overflow-x-auto">
         <table className="min-w-full border">
           <thead>
-            <tr>
+            <tr className="bg-purple-200 text-purple-900 font-semibold sticky top-0 z-10">
               <th>#</th>
               <th>Adı</th>
               <th>Yöre</th>
