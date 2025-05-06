@@ -21,10 +21,13 @@ const SearchPage = () => {
 
         const extractSorted = (field) => {
           const values = Array.from(new Set(songs.map(item => item[field]).filter(Boolean)));
-          const isNumeric = values.every(v => !isNaN(parseFloat(v)));
-          return isNumeric
-            ? values.sort((a, b) => parseFloat(a) - parseFloat(b))
-            : values.sort((a, b) => a.localeCompare(b, "tr"));
+          if (field === "usul") {
+            return values.sort((a, b) => {
+              const parseFirstNumber = (val) => parseFloat(val.split(/[,\/]/)[0]);
+              return parseFirstNumber(a) - parseFirstNumber(b);
+            });
+          }
+          return values.sort((a, b) => a.localeCompare(b, "tr"));
         };
 
         setDropdownOptions({
