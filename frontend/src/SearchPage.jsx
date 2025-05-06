@@ -140,8 +140,8 @@ export default function SearchPage() {
                 <td>{item.adi}</td>
                 <td>{item.yore}</td>
                 <td>{item.usul}</td>
-                <td><a href={item.nota_gorseli}>{item.nota_gorseli ? "Görüntüle" : "-"}</a></td>
-                <td><a href={item.mp3}>{item.mp3 ? "Dinle" : "-"}</a></td>
+                <td><a href={`/nota/${item.nota_gorseli}`}>{item.nota_gorseli ? "Görüntüle" : "-"}</a></td>
+                <td><a href={`/mp3/${item.mp3}`}>{item.mp3 ? "Dinle" : "-"}</a></td>
               </tr>
             ))}
           </tbody>
