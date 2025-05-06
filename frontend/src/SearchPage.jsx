@@ -1,159 +1,131 @@
-import React, { useEffect, useState, useRef } from "react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-export default function SearchPage() {
+const SearchPage = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [filters, setFilters] = useState({ adi: "", soz: "", yore: "", kaynak_kisi: "", usul: "" });
-  const [options, setOptions] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const resultsPerPage = 50;
-  const debounceTimer = useRef(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [yoreFilter, setYoreFilter] = useState("");
+  const [kaynakKisiFilter, setKaynakKisiFilter] = useState("");
+  const [usulFilter, setUsulFilter] = useState("");
+  const [sozFilter, setSozFilter] = useState("");
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/sarkilar`)
-      .then(res => res.json())
-      .then(records => {
-        setData(records);
-        setFilteredData(records);
-
-        const keys = ["yore", "usul", "kaynak_kisi"];
-        const generated = {};
-        keys.forEach(key => {
-          generated[key] = [...new Set(records.map(item => item[key]).filter(Boolean))].sort((a, b) =>
-            a.localeCompare(b, "tr")
-          );
-        });
-        setOptions(generated);
-      });
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/sarkilar`)
+      .then((res) => {
+        setData(res.data.sarkilar);
+        setFilteredData(res.data.sarkilar);
+      })
+      .catch((err) => console.error("Veri çekme hatası:", err));
   }, []);
 
   useEffect(() => {
-    let result = [...data];
-
-    result = result.filter(item =>
-      Object.entries(filters).every(([key, val]) => {
-        if (!val) return true;
-        const content = (item[key] || "").toLowerCase();
-        if (key === "soz") {
-          return val.toLowerCase().split(" ").every(k => content.includes(k));
-        }
-        return content.includes(val.toLowerCase());
-      })
-    );
-
-    setFilteredData(result);
-    setCurrentPage(1);
-  }, [filters, data]);
-
-  const handleFilterChange = (field, value) => {
-    if (["adi", "soz"].includes(field)) {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-      debounceTimer.current = setTimeout(() => {
-        setFilters(prev => ({ ...prev, [field]: value }));
-      }, 300);
-    } else {
-      setFilters(prev => ({ ...prev, [field]: value }));
-    }
-  };
-
-  const clearAllFilters = () => {
-    setFilters({ adi: "", soz: "", yore: "", kaynak_kisi: "", usul: "" });
-  };
-
-  const currentPageData = filteredData.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage);
-
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.text("THM Sözlü Arşiv", 10, 10);
-    autoTable(doc, {
-      startY: 20,
-      head: [["Adı", "Yöre", "Usul"]],
-      body: currentPageData.map(i => [i.adi, i.yore, i.usul])
+    let filtered = data.filter((item) => {
+      return (
+        item.adi.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        item.yore.toLowerCase().includes(yoreFilter.toLowerCase()) &&
+        item.kaynak_kisi.toLowerCase().includes(kaynakKisiFilter.toLowerCase()) &&
+        item.usul.toLowerCase().includes(usulFilter.toLowerCase()) &&
+        item.soz.toLowerCase().includes(sozFilter.toLowerCase())
+      );
     });
-    doc.save("thm-arsiv.pdf");
-  };
-
-  const handleExportXLS = () => {
-    const ws = XLSX.utils.json_to_sheet(currentPageData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Şarkılar");
-    XLSX.writeFile(wb, "thm-arsiv.xlsx");
-  };
+    setFilteredData(filtered);
+  }, [searchTerm, yoreFilter, kaynakKisiFilter, usulFilter, sozFilter, data]);
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">🎵 THM Sözlü Arşiv Arama Sistemi</h1>
-
-      <div className="flex flex-wrap gap-2 mb-2">
+      <h1 className="text-3xl font-bold mb-4">🎵 THM Sözlü Arşiv Arama Sistemi</h1>
+      <div className="flex flex-wrap gap-2 mb-4">
         <input
+          type="text"
           placeholder="adi"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="border p-2 rounded"
-          value={filters.adi}
-          onChange={e => handleFilterChange("adi", e.target.value)}
         />
-        {["yore", "kaynak_kisi", "usul"].map(field => (
-          <select
-            key={field}
-            className="border p-2 rounded"
-            value={filters[field]}
-            onChange={e => handleFilterChange(field, e.target.value)}
-          >
-            <option value="">{field.toUpperCase()}</option>
-            {(options[field] || []).map((opt, idx) => (
-              <option key={idx} value={opt}>{opt}</option>
-            ))}
-          </select>
-        ))}
         <input
-          placeholder="soz"
+          type="text"
+          placeholder="YORE"
+          value={yoreFilter}
+          onChange={(e) => setYoreFilter(e.target.value)}
           className="border p-2 rounded"
-          value={filters.soz}
-          onChange={e => handleFilterChange("soz", e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="KAYNAK_KISI"
+          value={kaynakKisiFilter}
+          onChange={(e) => setKaynakKisiFilter(e.target.value)}
+          className="border p-2 rounded"
+        />
+        <input
+          type="text"
+          placeholder="USUL"
+          value={usulFilter}
+          onChange={(e) => setUsulFilter(e.target.value)}
+          className="border p-2 rounded"
+        />
+        <input
+          type="text"
+          placeholder="soz"
+          value={sozFilter}
+          onChange={(e) => setSozFilter(e.target.value)}
+          className="border p-2 rounded"
         />
       </div>
 
-      <div className="flex gap-2 mb-2">
-        <button onClick={clearAllFilters}>Sıfırla</button>
-        <button onClick={handleExportPDF}>PDF Aktar</button>
-        <button onClick={handleExportXLS}>XLS Aktar</button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="min-w-full border">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Adı</th>
-              <th>Yöre</th>
-              <th>Usul</th>
-              <th>Nota</th>
-              <th>MP3</th>
+      <table className="table-auto w-full border-collapse border border-gray-400">
+        <thead className="sticky top-0 bg-purple-200 text-purple-900 z-10">
+          <tr>
+            <th className="border p-2">#</th>
+            <th className="border p-2">Adı</th>
+            <th className="border p-2">Yöre</th>
+            <th className="border p-2">Usul</th>
+            <th className="border p-2">Nota</th>
+            <th className="border p-2">MP3</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredData.map((item, index) => (
+            <tr key={index}>
+              <td className="border p-2">{index + 1}</td>
+              <td className="border p-2">{item.adi}</td>
+              <td className="border p-2">{item.yore}</td>
+              <td className="border p-2">{item.usul}</td>
+              <td className="border p-2">
+                {item.nota_gorseli !== "=" ? (
+                  <a
+                    href={item.nota_gorseli}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-gray-200 px-2 py-1 rounded inline-block text-center"
+                  >
+                    Görüntüle
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </td>
+              <td className="border p-2">
+                {item.mp3 !== "=" ? (
+                  <a
+                    href={`/${item.mp3}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    Dinle
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {currentPageData.map((item, idx) => (
-              <tr key={idx}>
-                <td>{(currentPage - 1) * resultsPerPage + idx + 1}</td>
-                <td>{item.adi}</td>
-                <td>{item.yore}</td>
-                <td>{item.usul}</td>
-                <td><a href={`/nota/${item.nota_gorseli}`}>{item.nota_gorseli ? "Görüntüle" : "-"}</a></td>
-                <td><a href={`/mp3/${item.mp3}`}>{item.mp3 ? "Dinle" : "-"}</a></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <p className="mt-2">Toplam {filteredData.length} sonuç bulundu</p>
-      <div className="mt-2 flex gap-2">
-        <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>←</button>
-        <span>Sayfa {currentPage}</span>
-        <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage * resultsPerPage >= filteredData.length}>→</button>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
-}
+};
+
+export default SearchPage;
