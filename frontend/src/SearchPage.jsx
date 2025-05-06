@@ -9,7 +9,6 @@ const SearchPage = () => {
   const [kaynakKisiFilter, setKaynakKisiFilter] = useState("");
   const [usulFilter, setUsulFilter] = useState("");
   const [sozFilter, setSozFilter] = useState("");
-  const [selectedNota, setSelectedNota] = useState(null);
 
   useEffect(() => {
     axios
@@ -95,12 +94,14 @@ const SearchPage = () => {
               <td className="border p-2">{item.usul}</td>
               <td className="border p-2">
                 {item.nota_gorseli !== "=" ? (
-                  <button
-                    className="bg-gray-200 px-2 py-1 rounded"
-                    onClick={() => setSelectedNota(`/${item.nota_gorseli}`)}
+                  <a
+                    href={item.nota_gorseli}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-gray-200 px-2 py-1 rounded inline-block text-center"
                   >
                     Görüntüle
-                  </button>
+                  </a>
                 ) : (
                   "-"
                 )}
@@ -118,25 +119,6 @@ const SearchPage = () => {
           ))}
         </tbody>
       </table>
-
-      {/* Modal Nota Görseli */}
-      {selectedNota && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black/70 z-50"
-          onClick={() => setSelectedNota(null)}
-        >
-          <div
-            className="bg-white p-4 rounded shadow-lg max-w-[90%] max-h-[90%] overflow-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={selectedNota}
-              alt="Nota Görseli"
-              className="max-w-full max-h-[80vh]"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
