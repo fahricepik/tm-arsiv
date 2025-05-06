@@ -107,10 +107,10 @@ export default function SearchPage() {
         <button onClick={handleExportXLS}>XLS Aktar</button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="max-h-[75vh] overflow-auto">
         <table className="min-w-full border">
           <thead>
-            <tr className="bg-purple-200 text-purple-900 font-semibold sticky top-0 z-10">
+            <tr className="bg-purple-200 text-purple-900 font-bold sticky top-0 z-20">
               <th>#</th>
               <th>Adı</th>
               <th>Yöre</th>
