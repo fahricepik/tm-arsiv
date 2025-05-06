@@ -9,6 +9,7 @@ export default function SearchPage() {
   const [filters, setFilters] = useState({ adi: "", soz: "", yore: "", kaynak_kisi: "", usul: "" });
   const [options, setOptions] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [modalImg, setModalImg] = useState(null);
   const resultsPerPage = 50;
   const debounceTimer = useRef(null);
 
@@ -88,31 +89,16 @@ export default function SearchPage() {
       <h1 className="text-2xl font-bold mb-4">🎵 THM Sözlü Arşiv Arama Sistemi</h1>
 
       <div className="flex flex-wrap gap-2 mb-2">
-        <input
-          placeholder="adi"
-          className="border p-2 rounded"
-          value={filters.adi}
-          onChange={e => handleFilterChange("adi", e.target.value)}
-        />
+        <input placeholder="adi" className="border p-2 rounded" value={filters.adi} onChange={e => handleFilterChange("adi", e.target.value)} />
         {["yore", "kaynak_kisi", "usul"].map(field => (
-          <select
-            key={field}
-            className="border p-2 rounded"
-            value={filters[field]}
-            onChange={e => handleFilterChange(field, e.target.value)}
-          >
+          <select key={field} className="border p-2 rounded" value={filters[field]} onChange={e => handleFilterChange(field, e.target.value)}>
             <option value="">{field.toUpperCase()}</option>
             {(options[field] || []).map((opt, idx) => (
               <option key={idx} value={opt}>{opt}</option>
             ))}
           </select>
         ))}
-        <input
-          placeholder="soz"
-          className="border p-2 rounded"
-          value={filters.soz}
-          onChange={e => handleFilterChange("soz", e.target.value)}
-        />
+        <input placeholder="soz" className="border p-2 rounded" value={filters.soz} onChange={e => handleFilterChange("soz", e.target.value)} />
       </div>
 
       <div className="flex gap-2 mb-2">
@@ -140,13 +126,22 @@ export default function SearchPage() {
                 <td>{item.adi}</td>
                 <td>{item.yore}</td>
                 <td>{item.usul}</td>
-                <td><a href={`/nota/${item.nota_gorseli}`}>{item.nota_gorseli ? "Görüntüle" : "-"}</a></td>
+                <td><button onClick={() => setModalImg(`/nota/${item.nota_gorseli}`)}>Görüntüle</button></td>
                 <td><a href={`/mp3/${item.mp3}`}>{item.mp3 ? "Dinle" : "-"}</a></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {modalImg && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" onClick={() => setModalImg(null)}>
+          <div className="bg-white p-4 rounded shadow-lg max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+            <img src={modalImg} alt="Nota Görseli" className="w-full h-auto" />
+            <button className="mt-2 text-sm text-blue-600 underline" onClick={() => setModalImg(null)}>Kapat</button>
+          </div>
+        </div>
+      )}
 
       <p className="mt-2">Toplam {filteredData.length} sonuç bulundu</p>
       <div className="mt-2 flex gap-2">
