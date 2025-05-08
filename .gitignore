@@ -1,0 +1,25 @@
+# Ortak ignore
+node_modules/
+dist/
+.env
+.env.*
+
+# IDE / OS / log
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# Vercel
+.vercel/
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env
+
+# Backend
+/backend/node_modules/
+/backend/dist/
+/backend/.env
