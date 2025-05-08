@@ -1,25 +1,38 @@
-# Ortak ignore
-node_modules/
-dist/
-.env
-.env.*
 
-# IDE / OS / log
-.vscode/
-.idea/
+# Node.js dependencies
+node_modules/
+
+# Production build
+dist/
+build/
+
+# Env files
+.env
+.env.*.local
+
+# System files
 .DS_Store
 Thumbs.db
+
+# Logs
 *.log
+
+# Compressed files
+*.zip
+*.tar.gz
 
 # Vercel
 .vercel/
 
-# Frontend
-/frontend/node_modules/
-/frontend/dist/
-/frontend/.env
+# IDE/editor files
+.vscode/
+*.swp
 
-# Backend
-/backend/node_modules/
-/backend/dist/
-/backend/.env
+# Cache
+.npm/
+.pnpm-store/
+.cache/
+
+# Other
+frontend/node_modules/
+frontend/dist/
